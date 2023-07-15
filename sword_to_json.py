@@ -5,7 +5,7 @@ if sys.version_info > (3, 0):
     from past.builtins import xrange
 
 
-def generate_dict(source_file, bible_version):
+def generate_dict(source_file, bible_version, book_name):
     modules = SwordModules(source_file)
     found_modules = modules.parse_modules()
     bible = modules.get_bible_from_module(bible_version)
@@ -16,21 +16,14 @@ def generate_dict(source_file, bible_version):
     bib['books'] = []
 
     for book in books:
+        if book_name and book.name != book_name:
+            continue
         chapters = []
         for chapter in xrange(1, book.num_chapters+1):
             verses = []
             for verse in xrange(1, len(book.get_indicies(chapter))+1 ):
-                verses.append({
-                    'verse': verse,
-                    'chapter': chapter,
-                    'name': book.name + " " + str(chapter) + ":" + str(verse),
-                    'text': bible.get(books=[book.name], chapters=[chapter], verses=[verse])
-                    })
-            chapters.append({
-                'chapter': chapter,
-                'name': book.name + " " + str(chapter),
-                'verses': verses
-            })
+                verses.append(bible.get(books=[book.name], chapters=[chapter], verses=[verse]))
+            chapters.append(verses)
         bib['books'].append({
             'name': book.name,
             'chapters': chapters
@@ -48,9 +41,10 @@ def main():
     parser.add_argument('--source_file')
     parser.add_argument('--bible_version')
     parser.add_argument('--output_file')
+    parser.add_argument('--book')
     args = parser.parse_args()
 
-    bible_dict = generate_dict(args.source_file, args.bible_version)
+    bible_dict = generate_dict(args.source_file, args.bible_version, args.book)
     write_json(bible_dict, args.output_file)
 
 if __name__ == "__main__": main()
